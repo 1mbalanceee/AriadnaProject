@@ -1,0 +1,1050 @@
+── RESET & VARIABLES ───────────────────────────────────── *,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #07070f;
+  --white: #e8e8f0;
+  --dim: rgba(232, 232, 240, 0.14);
+  --glow: rgba(232, 232, 240, 0.55);
+  --solved-clr: rgba(120, 255, 180, 0.85);
+  --font: 'Courier New', Courier, monospace;
+  --drawer-sz: 48px;
+  --gap: 3px;
+  --transition: 0.85s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ── BASE ────────────────────────────────────────────────── */
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font);
+}
+
+/* App shell — contains both 3D and 2D layers */
+.app-shell {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  inset: 0;
+  background: #04040e;
+  overflow: hidden;
+}
+
+/* 3D layer sits behind */
+.layer-3d {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* 2D layer sits on top */
+.layer-2d {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+.quest-container {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── FLASH OVERLAY ────────────────────────────────────────── */
+.flash-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: white;
+  opacity: 0;
+}
+
+/* zoom phase: slowly brighten */
+.flash-overlay.flash-zooming {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+/* flash phase: instant white */
+.flash-overlay.flash-flashing {
+  opacity: 1;
+  transition: opacity 0.1s ease;
+}
+
+/* reveal phase: fade out revealing 3D */
+.flash-overlay.flash-reveal {
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+
+.flash-overlay.flash-done,
+.flash-overlay.flash-idle {
+  opacity: 0;
+}
+
+/* ── WARDROBE ZOOM ANIMATION ─────────────────────────────── */
+.wardrobe.zooming {
+  animation: wardrobeZoomIn 0.9s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+}
+
+@keyframes wardrobeZoomIn {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) scale(28);
+    opacity: 0;
+  }
+}
+
+
+/* CRT scanlines */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px,
+      rgba(0, 0, 0, 0.04) 2px, rgba(0, 0, 0, 0.04) 4px);
+}
+
+/* ── BACKGROUND WALL ─────────────────────────────────────── */
+.background-wall {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--drawer-sz), 1fr));
+  grid-template-rows: repeat(auto-fill, minmax(var(--drawer-sz), 1fr));
+  gap: var(--gap);
+  padding: var(--gap);
+  align-content: stretch;
+}
+
+
+/* ── DRAWER TILE ─────────────────────────────────────────── */
+.drawer-tile {
+  background: rgba(10, 10, 20, 0.92);
+  border: 1px solid rgba(232, 232, 240, 0.13);
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 5px;
+  transition: opacity var(--transition), transform var(--transition), border-color 0.3s;
+  will-change: opacity, transform;
+}
+
+.drawer-handle {
+  width: 38%;
+  height: 2px;
+  background: rgba(232, 232, 240, 0.25);
+  border-radius: 2px;
+}
+
+/* states */
+.drawer-tile.dying {
+  opacity: 0;
+  transform: scale(0.15) rotate(8deg);
+  pointer-events: none;
+}
+
+.drawer-tile.dead {
+  opacity: 0;
+  pointer-events: none;
+  border-color: transparent;
+}
+
+.drawer-tile.beacon-active {
+  animation: beaconPulse 2.2s ease-in-out infinite;
+  border-color: var(--white);
+  cursor: pointer;
+  position: relative;
+  z-index: 102;
+  /* must be above modal overlay at z-index 100 */
+}
+
+/* Ящик Simon Says — мгновенная яркая вспышка без медленной анимации */
+.drawer-tile.beacon-seq-lit {
+  opacity: 1 !important;
+  border-color: white;
+  box-shadow: 0 0 28px white, 0 0 56px rgba(255, 255, 255, 0.55), inset 0 0 16px rgba(255, 255, 255, 0.15);
+  position: relative;
+  z-index: 102;
+  transition: box-shadow 0.08s, border-color 0.08s;
+}
+
+
+@keyframes beaconPulse {
+
+  0%,
+  100% {
+    opacity: 0.15;
+    box-shadow: none;
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 18px white, 0 0 36px rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Ящики в режиме ввода Simon-Says — кликабельны, без яркой подсветки */
+.drawer-tile.beacon-clickable {
+  cursor: pointer;
+  transition: border-color 0.1s, box-shadow 0.1s;
+}
+
+.drawer-tile.beacon-clickable:hover {
+  border-color: rgba(232, 232, 240, 0.7);
+  box-shadow: 0 0 14px rgba(232, 232, 240, 0.35);
+}
+
+/* ── WARDROBE ────────────────────────────────────────────── */
+.wardrobe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  width: 184px;
+  perspective: 900px;
+}
+
+.wardrobe-frame {
+  position: relative;
+}
+
+.wardrobe-rail {
+  height: 7px;
+  background: rgba(232, 232, 240, 0.28);
+  border: 1px solid rgba(232, 232, 240, 0.4);
+  border-radius: 2px;
+  transition: background 0.5s, box-shadow 0.5s;
+}
+
+.wardrobe-doors {
+  display: flex;
+  gap: 3px;
+  height: 310px;
+}
+
+.wardrobe-door {
+  flex: 1;
+  background: rgba(7, 7, 18, 0.97);
+  border: 1px solid rgba(232, 232, 240, 0.28);
+  border-top: none;
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 7px;
+  position: relative;
+  transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.5s, box-shadow 0.5s;
+}
+
+.left-door {
+  transform-origin: left center;
+}
+
+.right-door {
+  transform-origin: right center;
+}
+
+.left-door.open {
+  transform: rotateY(-78deg);
+}
+
+.right-door.open {
+  transform: rotateY(78deg);
+}
+
+.door-panel {
+  flex: 1;
+  border: 1px solid rgba(232, 232, 240, 0.15);
+  background: rgba(232, 232, 240, 0.02);
+}
+
+.door-knob {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 22px;
+  background: rgba(232, 232, 240, 0.45);
+  border-radius: 3px;
+}
+
+.knob-right {
+  right: 7px;
+}
+
+.knob-left {
+  left: 7px;
+}
+
+/* unlocked glow */
+.wardrobe.unlocked .wardrobe-rail {
+  background: rgba(232, 232, 240, 0.8);
+  box-shadow: 0 0 14px white;
+}
+
+.wardrobe.unlocked .wardrobe-door {
+  border-color: rgba(232, 232, 240, 0.7);
+  box-shadow: 0 0 22px rgba(232, 232, 240, 0.35);
+}
+
+/* Portal interior (visible after doors open) */
+.portal-interior {
+  position: absolute;
+  inset: 7px 0;
+  z-index: -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.portal-light {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(160, 160, 255, 0.28) 0%, transparent 70%);
+  animation: breath 3s ease-in-out infinite;
+}
+
+.portal-text {
+  position: relative;
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: rgba(200, 200, 255, 0.9);
+  text-shadow: 0 0 12px rgba(200, 200, 255, 0.8);
+  animation: breath 3s ease-in-out infinite;
+}
+
+@keyframes breath {
+
+  0%,
+  100% {
+    opacity: .4
+  }
+
+  50% {
+    opacity: 1
+  }
+}
+
+/* ── PUZZLE DRAWERS (overlay) ────────────────────────────── */
+.puzzle-drawer {
+  position: absolute;
+  width: 90px;
+  height: 110px;
+  z-index: 15;
+  cursor: pointer;
+  animation: floatUpDown 2.8s ease-in-out infinite alternate;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
+}
+
+.puzzle-drawer.solved {
+  cursor: default;
+  animation: none;
+}
+
+.puzzle-drawer:hover {
+  animation-play-state: paused;
+}
+
+@keyframes floatUpDown {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-7px);
+  }
+}
+
+.puzzle-drawer-face {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(232, 232, 240, 0.55);
+  border-bottom: 2px solid rgba(232, 232, 240, 0.3);
+  border-right: 2px solid rgba(232, 232, 240, 0.2);
+  background: linear-gradient(180deg,
+      rgba(14, 14, 30, 0.98) 0%,
+      rgba(7, 7, 18, 0.97) 18%,
+      rgba(10, 10, 22, 0.95) 19%,
+      rgba(7, 7, 18, 0.97) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  position: relative;
+  transition: box-shadow 0.25s, border-color 0.25s;
+  overflow: hidden;
+  /* inner top-edge highlight — makes it look like a drawer face */
+  box-shadow:
+    inset 0 1px 0 rgba(232, 232, 240, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    inset -1px 0 0 rgba(0, 0, 0, 0.35),
+    inset 1px 0 0 rgba(232, 232, 240, 0.06);
+}
+
+/* Top trim strip */
+.puzzle-drawer-face::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 10px;
+  background: rgba(232, 232, 240, 0.06);
+  border-bottom: 1px solid rgba(232, 232, 240, 0.18);
+  flex-shrink: 0;
+}
+
+/* Bottom trim strip */
+.puzzle-drawer-face::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(232, 232, 240, 0.1);
+  flex-shrink: 0;
+}
+
+.puzzle-drawer:hover .puzzle-drawer-face {
+  border-color: white;
+  box-shadow:
+    0 0 22px rgba(232, 232, 240, 0.5),
+    inset 0 1px 0 rgba(232, 232, 240, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    inset -1px 0 0 rgba(0, 0, 0, 0.35),
+    inset 1px 0 0 rgba(232, 232, 240, 0.1);
+}
+
+.puzzle-label {
+  font-size: 18px;
+  color: rgba(232, 232, 240, 0.7);
+  animation: dotPulse 1.6s ease-in-out infinite;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.puzzle-drawer.solved .puzzle-label {
+  color: var(--solved-clr);
+  animation: none;
+}
+
+@keyframes dotPulse {
+
+  0%,
+  100% {
+    opacity: .3;
+    transform: scale(.85)
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px white)
+  }
+}
+
+/* Drawer handle — centre horizontal bar with knob */
+.puzzle-drawer-handle {
+  width: 44px;
+  height: 10px;
+  background: transparent;
+  border: 1px solid rgba(232, 232, 240, 0.45);
+  border-radius: 5px;
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(232, 232, 240, 0.15);
+  position: relative;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/* Centre knob on handle */
+.puzzle-drawer-handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(232, 232, 240, 0.22);
+  border: 1px solid rgba(232, 232, 240, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(232, 232, 240, 0.2);
+}
+
+.puzzle-drawer.solved .puzzle-drawer-face {
+  border-color: rgba(120, 255, 180, 0.5);
+  box-shadow:
+    0 0 14px rgba(120, 255, 180, 0.3),
+    inset 0 1px 0 rgba(120, 255, 180, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.puzzle-drawer.solved .puzzle-drawer-handle {
+  border-color: rgba(120, 255, 180, 0.5);
+}
+
+.puzzle-drawer.solved .puzzle-drawer-handle::before {
+  border-color: rgba(120, 255, 180, 0.6);
+  background: rgba(120, 255, 180, 0.15);
+}
+
+/* ── PHASE HUD ───────────────────────────────────────────── */
+.phase-hud {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.phase-label {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: rgba(232, 232, 240, 0.4);
+  text-transform: uppercase;
+}
+
+.phase-dots {
+  display: flex;
+  gap: 10px;
+}
+
+.phase-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 232, 240, 0.35);
+  transition: all 0.4s ease;
+}
+
+.phase-dot.active {
+  background: white;
+  border-color: white;
+  box-shadow: 0 0 8px white;
+}
+
+.phase-dot.done {
+  background: rgba(120, 255, 180, 0.6);
+  border-color: rgba(120, 255, 180, 0.6);
+}
+
+/* ── MODAL ───────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeSlide 0.22s ease;
+}
+
+.modal-content {
+  background: rgba(6, 6, 14, 0.98);
+  border: 1px solid rgba(232, 232, 240, 0.38);
+  padding: 38px 32px 28px;
+  width: 90%;
+  max-width: 450px;
+  position: relative;
+  box-shadow: 0 0 70px rgba(0, 0, 0, 0.7), 0 0 22px rgba(232, 232, 240, 0.08);
+  animation: fadeSlide 0.22s ease;
+}
+
+.modal-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232, 232, 240, 0.55), transparent);
+}
+
+/* Beacon mode: overlay lets clicks pass through to the wall */
+.modal-overlay.beacon-mode {
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* But keep the modal card itself interactive */
+.modal-overlay.beacon-mode .modal-content {
+  pointer-events: auto;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 11px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: rgba(232, 232, 240, 0.35);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: white;
+}
+
+.modal-title {
+  font-size: 13px;
+  letter-spacing: 5px;
+  color: rgba(232, 232, 240, 0.5);
+  text-transform: uppercase;
+  margin-bottom: 22px;
+  font-weight: normal;
+}
+
+.modal-question {
+  font-size: 17px;
+  line-height: 1.9;
+  color: rgba(220, 220, 240, 0.88);
+  margin-bottom: 8px;
+}
+
+.modal-question p {
+  margin-bottom: 4px;
+}
+
+/* Input row */
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.input-arrow {
+  color: white;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.modal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(232, 232, 240, 0.35);
+  color: white;
+  font-family: inherit;
+  font-size: 17px;
+  padding: 6px 0;
+  outline: none;
+  letter-spacing: 2px;
+}
+
+.modal-input:focus {
+  border-bottom-color: white;
+}
+
+.modal-input.shake {
+  animation: shakeAnim 0.4s;
+  border-bottom-color: rgba(255, 70, 70, 0.8);
+}
+
+@keyframes shakeAnim {
+
+  0%,
+  100% {
+    transform: translateX(0)
+  }
+
+  20% {
+    transform: translateX(-7px)
+  }
+
+  40% {
+    transform: translateX(7px)
+  }
+
+  60% {
+    transform: translateX(-5px)
+  }
+
+  80% {
+    transform: translateX(5px)
+  }
+}
+
+/* Flicker highlighted chars */
+.flicker-char {
+  font-weight: bold;
+  color: white;
+  font-size: 1.05em;
+  animation: charFlicker 2.4s ease-in-out infinite;
+}
+
+@keyframes charFlicker {
+
+  0%,
+  85%,
+  100% {
+    opacity: 1;
+    text-shadow: none
+  }
+
+  42%,
+  58% {
+    opacity: 0.1;
+    text-shadow: 0 0 6px white
+  }
+}
+
+/* Scrollable text block (FlickerModal) */
+.modal-scrolltext {
+  font-size: 13px;
+  line-height: 1.9;
+  color: rgba(200, 200, 220, 0.7);
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 4px;
+}
+
+.modal-scrolltext::-webkit-scrollbar {
+  width: 3px;
+}
+
+.modal-scrolltext::-webkit-scrollbar-thumb {
+  background: rgba(232, 232, 240, 0.25);
+}
+
+/* Shadow art (ShadowModal) */
+.shadow-art-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.shadow-object {
+  width: 120px;
+  height: 120px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Arrow-shaped object that casts a heart shadow */
+.shadow-shape {
+  width: 40px;
+  height: 40px;
+  background: rgba(232, 232, 240, 0.15);
+  border: 1px solid rgba(232, 232, 240, 0.4);
+  border-radius: 50%;
+  box-shadow:
+    4px 14px 0 8px rgba(0, 0, 0, 0),
+    /* heart shadow beneath */
+    -10px 60px 0 0 rgba(232, 232, 240, 0.15),
+    -4px 60px 0 4px rgba(232, 232, 240, 0.15),
+    4px 60px 0 4px rgba(232, 232, 240, 0.15),
+    10px 60px 0 0 rgba(232, 232, 240, 0.15),
+    -14px 52px 0 2px rgba(232, 232, 240, 0.1),
+    14px 52px 0 2px rgba(232, 232, 240, 0.1);
+}
+
+.shadow-hint {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(232, 232, 240, 0.5);
+}
+
+/* Action button (BeaconModal, ConstellationModal, NotesModal) */
+.modal-action-btn {
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  background: transparent;
+  border: 1px solid rgba(232, 232, 240, 0.35);
+  color: rgba(232, 232, 240, 0.75);
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-action-btn:hover {
+  background: rgba(232, 232, 240, 0.07);
+  border-color: white;
+  color: white;
+}
+
+/* Patience modal */
+.bud-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.bud {
+  font-size: 56px;
+  line-height: 1;
+  transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 0 0px white);
+}
+
+.bud.bloomed {
+  transform: scale(1.4);
+  filter: drop-shadow(0 0 16px rgba(200, 255, 200, 0.8));
+  color: rgba(180, 255, 180, 0.95);
+}
+
+.patience-progress {
+  height: 2px;
+  background: rgba(232, 232, 240, 0.12);
+  margin: 14px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.patience-fill {
+  height: 100%;
+  background: white;
+  transition: width 0.08s linear;
+  box-shadow: 0 0 8px white;
+}
+
+.hold-btn {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(232, 232, 240, 0.35);
+  color: rgba(232, 232, 240, 0.7);
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.hold-btn:hover {
+  border-color: white;
+  color: white;
+}
+
+.hold-btn.holding {
+  background: rgba(232, 232, 240, 0.07);
+  border-color: white;
+  color: white;
+}
+
+/* ── BEACON INDICATOR (inside BeaconModal) ───────────────── */
+.beacon-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid rgba(232, 232, 240, 0.18);
+  color: rgba(232, 232, 240, 0.5);
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.beacon-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  flex-shrink: 0;
+  animation: beaconPulse 2.2s ease-in-out infinite;
+}
+
+/* ── SHARED ACTION BUTTON ────────────────────────────────── */
+.modal-action-btn {
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  background: transparent;
+  border: 1px solid rgba(232, 232, 240, 0.35);
+  color: rgba(232, 232, 240, 0.75);
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-action-btn:hover {
+  background: rgba(232, 232, 240, 0.07);
+  border-color: white;
+  color: white;
+}
+
+/* ── FINALE DRAWERS ──────────────────────────────────────── */
+.finale-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  pointer-events: none;
+  /* children opt-in */
+}
+
+.finale-hint {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: rgba(232, 232, 240, 0.55);
+  pointer-events: none;
+  animation: breath 2.5s ease-in-out infinite;
+}
+
+.finale-drawers-row {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.finale-drawer {
+  width: 80px;
+  height: 80px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: finaleFloat 3s ease-in-out infinite alternate;
+  animation-delay: calc(var(--slot) * 0.4s);
+}
+
+.finale-drawer.shuffling {
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes finaleFloat {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+.finale-face {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(232, 232, 240, 0.6);
+  background: rgba(7, 7, 18, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 10px;
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+
+.finale-drawer:hover .finale-face {
+  border-color: white;
+  box-shadow: 0 0 30px rgba(232, 232, 240, 0.7), inset 0 0 20px rgba(232, 232, 240, 0.05);
+}
+
+.finale-symbol {
+  font-size: 22px;
+  color: rgba(232, 232, 240, 0.9);
+  animation: dotPulse 1.8s ease-in-out infinite;
+}
+
+.finale-handle {
+  width: 45%;
+  height: 3px;
+  background: rgba(232, 232, 240, 0.5);
+  border-radius: 2px;
+}
+
+/* ── DEV SKIP BUTTON (2D layer, bottom-right) ─────────────── */
+.dev-skip-btn {
+  position: absolute;
+  bottom: 18px;
+  right: 20px;
+  z-index: 30;
+  background: none;
+  border: none;
+  color: rgba(232, 232, 240, 0.28);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  padding: 6px 10px;
+  transition: color 0.2s, opacity 0.2s;
+  opacity: 0.6;
+}
+
+.dev-skip-btn:hover {
+  color: rgba(232, 232, 240, 0.9);
+  opacity: 1;
+}
+
+/* ── BACK TO 2D BUTTON (3D layer, top-left) ───────────────── */
+.back-to-2d-btn {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  z-index: 30;
+  background: rgba(7, 7, 18, 0.6);
+  border: 1px solid rgba(232, 232, 240, 0.2);
+  color: rgba(232, 232, 240, 0.5);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  padding: 8px 14px;
+  transition: all 0.2s;
+}
+
+.back-to-2d-btn:hover {
+  background: rgba(7, 7, 18, 0.9);
+  border-color: rgba(232, 232, 240, 0.6);
+  color: rgba(232, 232, 240, 0.95);
+}
