@@ -273,6 +273,7 @@ function SceneContents({ isRunning, onBedClick, index, isFinished }) {
                 minPolarAngle={Math.PI * 0.12}
                 maxPolarAngle={Math.PI * 0.78}
                 target={[0.3, 0.8, 0]}
+                azimuthAngle={Math.PI * 0.5}
             />
 
             {/* ── POST-PROCESSING ── */}
@@ -483,6 +484,7 @@ export default function RoomScene({ onBack }) {
     const [isRunning, setIsRunning] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
     const [modelReady, setModelReady] = useState(false);
+    const [hasInteracted, setHasInteracted] = useState(false);
 
     // ── Start sequence ──
     const handleBedClick = useCallback(() => {
@@ -549,9 +551,10 @@ export default function RoomScene({ onBack }) {
             {/* ── 3D CANVAS ── */}
             <Canvas
                 shadows
-                camera={{ position: [0, 1.8, 5.5], fov: 50 }}
+                camera={{ position: [5.5, 1.8, 0], fov: 50 }}
                 style={{ position: 'absolute', inset: 0 }}
                 gl={{ antialias: true, alpha: false }}
+                onPointerDown={() => setHasInteracted(true)}
             >
                 <SceneContents
                     isRunning={isRunning}
@@ -611,6 +614,18 @@ export default function RoomScene({ onBack }) {
                 </button>
             )}
 
+            {/* ── MOUSE HINT ── */}
+            {!isRunning && !isFinished && !hasInteracted && (
+                <motion.div
+                    style={mousehintStyle}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+                >
+                    ↻ &nbsp; потяни мышкой — осмотри комнату
+                </motion.div>
+            )}
+
             {/* ── DEV: JUMP TO FINALE ── */}
             {!isRunning && !isFinished && modelReady && (
                 <button
@@ -663,4 +678,19 @@ const devJumpStyle = {
     cursor: 'pointer',
     padding: '6px 10px',
     opacity: 0.65,
+};
+
+const mousehintStyle = {
+    position: 'absolute',
+    bottom: 56,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    fontFamily: "'Courier New', monospace",
+    fontSize: '13px',
+    letterSpacing: '3px',
+    color: 'rgba(255,220,150,0.7)',
+    pointerEvents: 'none',
+    userSelect: 'none',
+    whiteSpace: 'nowrap',
+    zIndex: 50,
 };

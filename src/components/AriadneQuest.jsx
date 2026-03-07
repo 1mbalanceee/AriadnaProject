@@ -187,14 +187,22 @@ function AriadneThread({ chests, openedIds, containerRef }) {
 
     useEffect(() => {
         if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+
+        // Read actual center of each opened chest sprite from DOM
         const nodes = chests
             .filter(c => openedIds.includes(c.id))
-            .map(c => ({
-                id: c.id,
-                cx: (c.x / 100) * rect.width,
-                cy: (c.y / 100) * rect.height,
-            }));
+            .map(c => {
+                const el = containerRef.current.querySelector(`[data-chest-id="${c.id}"]`);
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return {
+                    id: c.id,
+                    cx: r.left + r.width  / 2 - containerRect.left,
+                    cy: r.top  + r.height / 2 - containerRect.top,
+                };
+            })
+            .filter(Boolean);
 
         const newLines = [];
         for (let i = 0; i < nodes.length - 1; i++) {
@@ -485,7 +493,11 @@ function Chest({ chest, isOpen, isCooldown, isFlying, isDisabled, isCrit20, onCh
                 : { duration: 2.5, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
             onClick={() => !isOpen && !isDisabled && !isCooldown && onChestClick(chest.id)}
         >
-            <img src={sprite} alt={label} draggable={false} style={sc.chestSprite} />
+            <img
+                src={sprite} alt={label} draggable={false}
+                data-chest-id={chest.id}
+                style={sc.chestSprite}
+            />
 
             {/* Nat20 ring glow */}
             {isCrit20 && (
@@ -1167,8 +1179,9 @@ const sc = {
         pointerEvents: 'none', zIndex: -1,
     },
     lockedTooltip: {
-        position: 'absolute', bottom: -26, left: '50%', transform: 'translateX(-50%)',
-        fontSize: 'clamp(4px, 0.55vw, 6px)', color: '#8b4513', letterSpacing: '1px',
+        position: 'absolute', bottom: -30, left: '50%', transform: 'translateX(-50%)',
+        fontSize: 'clamp(8px, 1vw, 12px)', color: '#e8941a', letterSpacing: '1.5px',
+        textShadow: '0 0 8px rgba(232,148,26,0.5)',
         whiteSpace: 'nowrap', textAlign: 'center',
     },
     glowRing: {
@@ -1188,10 +1201,12 @@ const sc = {
 
     // ── Candle banner ─────────────────────────────────────────
     candleBanner: {
-        position: 'absolute', bottom: '13%', left: '50%', transform: 'translateX(-50%)',
+        position: 'absolute', top: '12%', left: '44%', transform: 'none',
         zIndex: 30, display: 'flex', alignItems: 'center', gap: 14,
-        padding: '10px 26px', border: '1px solid #c8860a',
-        background: 'rgba(20,8,0,0.92)', boxShadow: '0 0 28px #c8860a44',
+        padding: '10px 26px', border: '1px solid rgb(200,134,10)',
+        background: 'rgba(20,8,0,0.92)',
+        boxShadow: 'rgba(200,134,10,0.267) 0px 0px 28px',
+        whiteSpace: 'nowrap', width: 'max-content', textAlign: 'center',
     },
     candleBannerText: {
         fontSize: 'clamp(7px, 1vw, 10px)', color: '#f4a820', letterSpacing: '4px', textShadow: '0 0 12px #f4a820',
@@ -1200,17 +1215,24 @@ const sc = {
     // ── Item bar ──────────────────────────────────────────────
     itemBar: {
         position: 'absolute', top: '4%', right: '3%', zIndex: 30,
-        display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 14px',
-        background: 'rgba(10,4,0,0.88)', border: '1px solid rgba(200,134,10,0.2)',
+        display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 18px',
+        background: 'rgba(10,4,0,0.92)', border: '1px solid rgba(200,134,10,0.4)',
+        boxShadow: '0 0 16px rgba(0,0,0,0.5), inset 0 0 8px rgba(200,134,10,0.06)',
+        borderRadius: '4px',
     },
-    itemSlot: { display: 'flex', alignItems: 'center', gap: 8, transition: 'opacity 0.5s' },
-    itemSlotLabel: { fontSize: 'clamp(5px, 0.65vw, 7px)', letterSpacing: '1px', transition: 'color 0.4s' },
+    itemSlot: { display: 'flex', alignItems: 'center', gap: 10, transition: 'opacity 0.5s' },
+    itemSlotLabel: { fontSize: 'clamp(8px, 1vw, 11px)', letterSpacing: '1.5px', transition: 'color 0.4s' },
 
     // ── Hint ──────────────────────────────────────────────────
     hint: {
         position: 'absolute', bottom: '4%', left: '50%', transform: 'translateX(-50%)',
-        fontSize: 'clamp(9px, 1.1vw, 13px)', color: '#7a6030', letterSpacing: '2px',
-        textAlign: 'center', zIndex: 30, maxWidth: '80%', lineHeight: 1.9,
+        fontSize: 'clamp(10px, 1.3vw, 15px)', color: '#c8a050', letterSpacing: '2px',
+        textAlign: 'center', zIndex: 30, maxWidth: '80%', lineHeight: 2.0,
+        background: 'rgba(5,2,0,0.75)',
+        border: '1px solid rgba(200,134,10,0.25)',
+        padding: '10px 24px',
+        boxShadow: '0 0 24px rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(4px)',
     },
 
     // ── D20 ───────────────────────────────────────────────────

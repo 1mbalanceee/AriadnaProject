@@ -48,7 +48,7 @@ export default function PatienceModal() {
 
             <div className="modal-question">
                 {bloomed
-                    ? <p>* Ты дождалась.</p>
+                    ? <p>* Отлично! Теперь состояние чуть стабилизировалось.</p>
                     : <p>* Удерживай кнопку — не отпускай.</p>
                 }
             </div>
