@@ -88,8 +88,9 @@ export default function FlickerModal() {
                             }}
                         />
                         <div style={{
-                            fontFamily: "'Courier New', monospace", fontSize: '9px',
-                            letterSpacing: '2px', color: 'rgba(200,0,40,0.5)',
+                            fontFamily: "'Courier New', monospace", fontSize: '14px',
+                            letterSpacing: '2px', color: 'rgba(200,0,40,0.7)',
+                            fontWeight: 'bold'
                         }}
                         >
                             {failed ? '[ ПРОМАХ ]' : `[ ${beats}/3 ]`}

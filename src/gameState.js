@@ -129,6 +129,16 @@ export function gameReducer(state, action) {
 
         case 'SOLVE_PUZZLE': {
             const solved = [...state.solvedPuzzles, action.puzzleId];
+            if (action.forcePhase !== undefined) {
+                const target = getPhaseCount(action.forcePhase, state.fullCount);
+                return {
+                    ...state,
+                    solvedPuzzles: solved,
+                    phase: action.forcePhase,
+                    boxes: eliminateBoxes(state.boxes, target),
+                    activeModal: null,
+                };
+            }
             return tryAdvancePhase(state, solved);
         }
 

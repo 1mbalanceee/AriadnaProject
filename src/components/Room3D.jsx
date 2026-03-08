@@ -5,12 +5,12 @@ import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 
 // ── Bedroom GLB model ─────────────────────────────────────────
 function BedroomModel() {
-    const { scene } = useGLTF('/models/ariadnaroomver1.glb');
+    const { scene } = useGLTF('/models/roomver2.glb');
     return <primitive object={scene} />;
 }
 
 // Preload so it starts fetching before the transition fires
-useGLTF.preload('/models/ariadnaroomver1.glb');
+useGLTF.preload('/models/roomver2.glb');
 
 // ── Loading placeholder while GLB streams ─────────────────────
 function Loader() {

@@ -56,7 +56,7 @@ const _clayMat = new THREE.MeshStandardMaterial({
 });
 
 function BedroomModel() {
-    const { scene } = useGLTF('/models/ariadnaroomver1.glb');
+    const { scene } = useGLTF('/models/roomver2.glb');
 
     useEffect(() => {
         scene.traverse((child) => {
@@ -70,7 +70,7 @@ function BedroomModel() {
 
     return <primitive object={scene} />;
 }
-useGLTF.preload('/models/ariadnaroomver1.glb');
+useGLTF.preload('/models/roomver2.glb');
 
 // ─────────────────────────────────────────────────────────────
 //  LOADING SCREEN (HTML overlay)

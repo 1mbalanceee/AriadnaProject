@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGame } from '../GameContext';
 
-const SHOW_MS       = 1600;
-const SHUFFLE_COUNT = 7;
-const SHUFFLE_BASE  = 450;
+const SHOW_MS       = 2000;
+const SHUFFLE_COUNT = 8;
+const SHUFFLE_BASE  = 1200;
 const COOLDOWN_S    = 5;
 
 export default function FinaleDrawers() {
-    const { phase, isWardrobeOpen, grantFinalKey } = useGame();
+    const { phase, isWardrobeOpen, grantFinalKey, dispatch } = useGame();
 
     // slots = array of drawerIdx in display order (left to right)
     // drawerIdx 0 = the KEY (correct); 1 & 2 = decoys
@@ -19,6 +19,7 @@ export default function FinaleDrawers() {
     const timers = useRef([]);
 
     const visible = phase === 3 && !isWardrobeOpen;
+    const canSkip = phase < 3; // Allow skipping from any phase before the finale
 
     const killAll = () => {
         timers.current.forEach(t => { clearTimeout(t); clearInterval(t); });
@@ -51,7 +52,7 @@ export default function FinaleDrawers() {
                 [cur[i], cur[j]] = [cur[j], cur[i]];
                 setSlots([...cur]);
                 count++;
-                const t = setTimeout(doSwap, SHUFFLE_BASE + count * 40);
+                const t = setTimeout(doSwap, SHUFFLE_BASE);
                 timers.current.push(t);
             };
 
@@ -89,7 +90,7 @@ export default function FinaleDrawers() {
         }
     }, [roundPhase, grantFinalKey, startRound]);
 
-    if (!visible) return null;
+    if (!visible && !canSkip) return null;
 
     const hintText =
         roundPhase === 'showing'   ? '✦  Запомни — где нить  ✦' :
@@ -100,43 +101,80 @@ export default function FinaleDrawers() {
     const isShuffling = roundPhase === 'shuffling';
 
     return (
-        <div className="finale-stage">
-            <p className="finale-hint">{hintText}</p>
-            {/* Flex row — key={drawerIdx} lets framer-motion layout-animate reorders */}
-            <div className="finale-drawers-row">
-                {slots.map((drawerIdx) => {
-                    const isKey  = drawerIdx === 0;
-                    const lit    = isKey && showKey;
-                    const isCool = roundPhase === 'cooldown';
+        <>
+            {canSkip && (
+                <button
+                    onClick={() => dispatch({ type: 'SOLVE_PUZZLE', puzzleId: 'DEBUG_TO_SHUFFLE', forcePhase: 3 })}
+                    style={{
+                        position: 'fixed',
+                        bottom: '25px',
+                        left: '25px',
+                        zIndex: 9999,
+                        background: 'rgba(255, 100, 100, 0.4)',
+                        border: '1px solid rgba(255, 100, 100, 0.6)',
+                        color: 'white',
+                        fontSize: '9px',
+                        padding: '12px 18px',
+                        cursor: 'pointer',
+                        letterSpacing: '2px',
+                        textTransform: 'uppercase',
+                        fontFamily: "'Press Start 2P', 'Courier New', monospace",
+                        boxShadow: '0 0 20px rgba(255, 100, 100, 0.3)',
+                    }}
+                >
+                    [ К ШАФФЛУ → ]
+                </button>
+            )}
+            {visible && (
+                <div className="finale-stage">
+                    <p className="finale-hint">{hintText}</p>
+                    <div className="finale-drawers-row">
+                        {slots.map((drawerIdx) => {
+                            const isKey = drawerIdx === 0;
+                            const lit = isKey && showKey;
+                            const isCool = roundPhase === 'cooldown';
 
-                    return (
-                        <motion.div
-                            key={drawerIdx}
-                            layout
-                            transition={{ type: 'spring', stiffness: 340, damping: 28, mass: 0.9 }}
-                            className="finale-drawer"
-                            style={{ animation: isShuffling ? 'none' : undefined }}
-                            onClick={() => handleClick(drawerIdx)}
-                            role="button"
-                        >
-                            <div
-                                className="finale-face"
-                                style={
-                                    lit ? {
-                                        borderColor: '#ffd700',
-                                        boxShadow: '0 0 36px #ffd700, 0 0 72px rgba(255,215,0,0.4), inset 0 0 24px rgba(255,215,0,0.12)',
-                                    } : isCool ? {
-                                        borderColor: 'rgba(255,60,60,0.35)',
-                                    } : {}
-                                }
-                            >
-                                <div className="finale-symbol">{lit ? '🗝️' : '✦'}</div>
-                                <div className="finale-handle" />
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </div>
-        </div>
+                            return (
+                                <motion.div
+                                    key={drawerIdx}
+                                    layout
+                                    transition={{
+                                        type: 'spring',
+                                        stiffness: 60,
+                                        damping: 15,
+                                        mass: 1.2,
+                                    }}
+                                    className="finale-drawer"
+                                    style={{ animation: isShuffling ? 'none' : undefined }}
+                                    onClick={() => handleClick(drawerIdx)}
+                                    role="button"
+                                >
+                                    <div
+                                        className="finale-face"
+                                        style={
+                                            lit ? {
+                                                borderColor: '#ffd700',
+                                                boxShadow: '0 0 36px #ffd700, 0 0 72px rgba(255,215,0,0.4), inset 0 0 24px rgba(255,215,0,0.12)',
+                                            } : isCool ? {
+                                                borderColor: 'rgba(255,60,60,0.35)',
+                                            } : {}
+                                        }
+                                    >
+                                        <div className="finale-symbol">
+                                    {lit ? '🗝️' : (
+                                        roundPhase === 'shuffling' 
+                                            ? (isKey ? '✦' : <span style={{ opacity: 0.15 }}>·</span>) 
+                                            : '✦'
+                                    )}
+                                </div>
+                                        <div className="finale-handle" />
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
