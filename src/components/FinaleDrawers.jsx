@@ -20,7 +20,6 @@ export default function FinaleDrawers() {
     const timers = useRef([]);
 
     const visible = phase === 3 && !isWardrobeOpen;
-    const canSkip = phase < 3; // Allow skipping from any phase before the finale
 
     const killAll = () => {
         timers.current.forEach(t => { clearTimeout(t); clearInterval(t); });
@@ -96,7 +95,7 @@ export default function FinaleDrawers() {
         }
     }, [roundPhase, grantFinalKey, startRound]);
 
-    if (!visible && !canSkip) return null;
+    if (!visible) return null;
 
     const hintText =
         roundPhase === 'showing' ? '✦  Запомни — где нить  ✦' :
@@ -108,29 +107,6 @@ export default function FinaleDrawers() {
 
     return (
         <>
-            {canSkip && (
-                <button
-                    onClick={() => dispatch({ type: 'SOLVE_PUZZLE', puzzleId: 'DEBUG_TO_SHUFFLE', forcePhase: 3 })}
-                    style={{
-                        position: 'fixed',
-                        bottom: '25px',
-                        left: '25px',
-                        zIndex: 9999,
-                        background: 'rgba(255, 100, 100, 0.4)',
-                        border: '1px solid rgba(255, 100, 100, 0.6)',
-                        color: 'white',
-                        fontSize: '9px',
-                        padding: '12px 18px',
-                        cursor: 'pointer',
-                        letterSpacing: '2px',
-                        textTransform: 'uppercase',
-                        fontFamily: "'Press Start 2P', 'Courier New', monospace",
-                        boxShadow: '0 0 20px rgba(255, 100, 100, 0.3)',
-                    }}
-                >
-                    [ К ШАФФЛУ → ]
-                </button>
-            )}
             {visible && (
                 <div className="finale-stage">
                     <p className="finale-hint">{hintText}</p>
