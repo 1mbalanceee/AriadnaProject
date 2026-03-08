@@ -28,7 +28,7 @@ const compliments = [
     "Я видел, как ты росла в этой истории...",
     "От той первой минуты, когда ты просто хотела обнять подушку,",
     "до момента, когда осознала — магия это ты сама.",
-    "Я очень рад наблюдать, что ты стремишься добиваться...",
+    "Я очень рад наблюдать, что ты стремишься добиваться всякого...",
     "И используешь свою природную мудрость для достижения этих целей.",
     "Уверен, что порой ты подсознательно сама знаешь решения,",
     "даже если в это сама ещё не веришь.",
@@ -362,19 +362,20 @@ const finaleHeartStyle = {
 
 const finaleTitleStyle = {
     fontFamily: "'Cormorant Garamond', Georgia, serif",
-    fontSize: 'clamp(28px, 5vw, 56px)',
+    fontSize: 'clamp(38px, 8vw, 76px)',
     fontStyle: 'italic',
     fontWeight: 700,
     color: '#fff0e0',
-    textShadow: '0 0 40px rgba(255,220,150,0.9), 0 0 80px rgba(255,160,60,0.5)',
+    textShadow: '0 0 40px rgba(255,220,150,0.95), 0 0 80px rgba(255,160,60,0.6)',
     textAlign: 'center',
+    marginBottom: 10,
 };
 
 const finaleSubStyle = {
     fontFamily: "'Courier New', monospace",
-    fontSize: 'clamp(10px, 1.5vw, 13px)',
-    letterSpacing: '8px',
-    color: 'rgba(255,220,150,0.55)',
+    fontSize: 'clamp(16px, 2.5vw, 22px)',
+    letterSpacing: '10px',
+    color: 'rgba(255,220,150,0.7)',
     textAlign: 'center',
 };
 

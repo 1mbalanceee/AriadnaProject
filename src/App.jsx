@@ -21,7 +21,7 @@ export default function App() {
 }
 
 function AppInner() {
-  const { isWardrobeOpen } = useGame();
+  const { isWardrobeOpen, resetGame } = useGame();
 
   // 'prequest' → 'idle' → 'zooming' → 'flashing' → 'reveal' → 'done'
   const [trans, setTrans] = useState('prequest');
@@ -171,8 +171,11 @@ function AppInner() {
     } catch { /* audio unavailable */ }
   }
 
-  // Return from 3D back to 2D quest
-  const backTo2D = useCallback(() => setTrans('idle'), []);
+  // Return from 3D back to the very beginning (pre-quest)
+  const backToStart = useCallback(() => {
+    setTrans('prequest');
+    resetGame();
+  }, [resetGame]);
 
   const isDone = trans === 'done';
   const show3D = trans === 'reveal' || isDone;
@@ -206,7 +209,7 @@ function AppInner() {
           className="layer-3d"
           style={{ opacity: show3D ? 1 : 0, transition: show3D ? 'opacity 1.3s ease' : 'none' }}
         >
-          {show3D && <RoomScene onBack={backTo2D} />}
+          {show3D && <RoomScene onBack={backToStart} />}
         </div>
       )}
 

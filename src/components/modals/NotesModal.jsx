@@ -27,7 +27,7 @@ export default function NotesModal() {
             }, 700);
         } else {
             setWrong(true);
-            setTimeout(() => { setWrong(false); setSelected(null); }, 900);
+            setTimeout(() => { setWrong(false); setSelected(null); }, 1900);
         }
     };
 
@@ -71,8 +71,9 @@ export default function NotesModal() {
 
             {wrong && (
                 <p style={{
-                    color: 'rgba(200,0,40,0.8)', fontSize: '9px',
-                    letterSpacing: '2px', textAlign: 'center', marginTop: 8,
+                    color: 'rgba(200,0,40,0.8)', fontSize: '13px',
+                    letterSpacing: '2px', textAlign: 'center', marginTop: 12,
+                    fontWeight: 600,
                 }}>
                     * Лавонд усмехается. «Это не то.»
                 </p>

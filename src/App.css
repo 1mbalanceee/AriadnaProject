@@ -953,14 +953,10 @@ body {
   height: 80px;
   cursor: pointer;
   pointer-events: auto;
-  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
   animation: finaleFloat 3s ease-in-out infinite alternate;
   animation-delay: calc(var(--slot) * 0.4s);
 }
 
-.finale-drawer.shuffling {
-  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 @keyframes finaleFloat {
   from {

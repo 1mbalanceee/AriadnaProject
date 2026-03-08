@@ -150,6 +150,13 @@ export function gameReducer(state, action) {
                 ),
             };
 
+        case 'RESET_GAME':
+            return {
+                ...initialState,
+                fullCount: state.fullCount,
+                boxes: createInitialBoxes(state.fullCount),
+            };
+
         case 'GRANT_FINAL_KEY':
             return {
                 ...state,

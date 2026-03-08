@@ -174,6 +174,11 @@ export function GameProvider({ children }) {
 
     const solvePuzzle = useCallback((id) => dispatch({ type: 'SOLVE_PUZZLE', puzzleId: id }), []);
     const grantFinalKey = useCallback(() => dispatch({ type: 'GRANT_FINAL_KEY' }), []);
+    const resetGame = useCallback(() => {
+        setFailures({});
+        setHints([]);
+        dispatch({ type: 'RESET_GAME' });
+    }, []);
 
     const value = {
         ...state,
@@ -188,6 +193,7 @@ export function GameProvider({ children }) {
         beaconSequence, beaconLitId, beaconPhase, beaconPlayerStep,
         startBeaconSequence, handleBeaconClick,
         showHint,
+        resetGame,
     };
 
     return (

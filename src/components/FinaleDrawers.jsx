@@ -2,19 +2,20 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGame } from '../GameContext';
 
-const SHOW_MS       = 2000;
-const SHUFFLE_COUNT = 8;
-const SHUFFLE_BASE  = 1200;
-const COOLDOWN_S    = 5;
+const SHOW_MS = 1500;
+const SHUFFLE_COUNT = 24;   // Увеличиваем количество — дольше концентрация
+const SHUFFLE_START = 420;  // Начинаем спокойно
+const SHUFFLE_MIN = 160;    // Заканчиваем безумно быстро
+const COOLDOWN_S = 3;
 
 export default function FinaleDrawers() {
     const { phase, isWardrobeOpen, grantFinalKey, dispatch } = useGame();
 
     // slots = array of drawerIdx in display order (left to right)
     // drawerIdx 0 = the KEY (correct); 1 & 2 = decoys
-    const [slots,      setSlots]      = useState([1, 0, 2]);
+    const [slots, setSlots] = useState([1, 0, 2]);
     const [roundPhase, setRoundPhase] = useState('idle');
-    const [showKey,    setShowKey]    = useState(false);
+    const [showKey, setShowKey] = useState(false);
     const [cooldownLeft, setCooldown] = useState(0);
     const timers = useRef([]);
 
@@ -39,7 +40,7 @@ export default function FinaleDrawers() {
             setShowKey(false);
             setRoundPhase('shuffling');
 
-            let cur   = [...initial];
+            let cur = [...initial];
             let count = 0;
 
             const doSwap = () => {
@@ -52,7 +53,12 @@ export default function FinaleDrawers() {
                 [cur[i], cur[j]] = [cur[j], cur[i]];
                 setSlots([...cur]);
                 count++;
-                const t = setTimeout(doSwap, SHUFFLE_BASE);
+                
+                // Ускорение: с каждым шагом задержка уменьшается
+                const progress = count / SHUFFLE_COUNT;
+                const nextDelay = SHUFFLE_START - (SHUFFLE_START - SHUFFLE_MIN) * progress;
+                
+                const t = setTimeout(doSwap, nextDelay);
                 timers.current.push(t);
             };
 
@@ -93,10 +99,10 @@ export default function FinaleDrawers() {
     if (!visible && !canSkip) return null;
 
     const hintText =
-        roundPhase === 'showing'   ? '✦  Запомни — где нить  ✦' :
-        roundPhase === 'shuffling'  ? '· · ·'                    :
-        roundPhase === 'cooldown'   ? `✗  Неверно — подожди ${cooldownLeft}с` :
-                                      '✦  Найди нить  ✦';
+        roundPhase === 'showing' ? '✦  Запомни — где нить  ✦' :
+            roundPhase === 'shuffling' ? '· · ·' :
+                roundPhase === 'cooldown' ? `✗  Неверно — подожди ${cooldownLeft}с` :
+                    '✦  Найди нить  ✦';
 
     const isShuffling = roundPhase === 'shuffling';
 
@@ -139,11 +145,18 @@ export default function FinaleDrawers() {
                                     key={drawerIdx}
                                     layout
                                     transition={{
-                                        type: 'spring',
-                                        stiffness: 60,
-                                        damping: 15,
-                                        mass: 1.2,
+                                        layout: {
+                                            type: 'spring',
+                                            stiffness: isShuffling ? 450 : 380, // Еще жестче когда быстро
+                                            damping: isShuffling ? 32 : 28,
+                                            mass: 0.6
+                                        }
                                     }}
+                                    animate={isShuffling ? { 
+                                        filter: ['blur(0px)', 'blur(3px)', 'blur(0px)'],
+                                        scale: [1, 0.96, 1],
+                                        rotate: [0, (Math.random() - 0.5) * 4, 0]
+                                    } : {}}
                                     className="finale-drawer"
                                     style={{ animation: isShuffling ? 'none' : undefined }}
                                     onClick={() => handleClick(drawerIdx)}
@@ -161,12 +174,8 @@ export default function FinaleDrawers() {
                                         }
                                     >
                                         <div className="finale-symbol">
-                                    {lit ? '🗝️' : (
-                                        roundPhase === 'shuffling' 
-                                            ? (isKey ? '✦' : <span style={{ opacity: 0.15 }}>·</span>) 
-                                            : '✦'
-                                    )}
-                                </div>
+                                            {lit ? '🗝️' : '✦'}
+                                        </div>
                                         <div className="finale-handle" />
                                     </div>
                                 </motion.div>
